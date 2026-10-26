@@ -42,4 +42,4 @@ herdr
 ## 4. Install the "herdr-pair" skill
 
 ## 5. Usage
-investigate Jira ticket AVS5-12345 and propose a fix, check with advisor then fire up /herdr-pair codex agent, align on a solution.
+investigate Jira ticket AVS5-12345 and propose a fix, then fire up /herdr-pair codex agent to review your plan, align on a solution.
