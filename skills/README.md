@@ -40,6 +40,9 @@ herdr
 ```
 
 ## 4. Install the "herdr-pair" skill
+```
+cp -r herdr-pair ~/.claude/skills
+```
 
 ## 5. Usage
 investigate Jira ticket AVS5-12345 and propose a fix, then fire up /herdr-pair codex agent to review your plan, align on a solution.
