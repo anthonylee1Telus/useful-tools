@@ -1,6 +1,7 @@
 ---
 name: pair-review
-description: Two-reviewer PR review. Claude's /code-review and a peer Claude in a new Herdr pane running /codex:adversarial-review review the same PR head, reconcile over shared files until aligned, and produce ONE combined table (Number | File : line | What to change | Why | Severity). Asks before posting to GitHub. Optional args: effort level (low|medium|high|xhigh|max) and max rounds (--rounds N, default 4). Requires HERDR_ENV=1.
+description: >-
+  Two-reviewer PR review. Claude's /code-review and a peer Claude in a new Herdr pane running /codex:adversarial-review review the same PR head, reconcile over shared files until aligned, and produce ONE combined table (Number | File : line | What to change | Why | Severity). Asks before posting to GitHub. Optional args: effort level (low|medium|high|xhigh|max) and max rounds (--rounds N, default 4). Requires HERDR_ENV=1.
 disable-model-invocation: true
 argument-hint: '<pr-number|branch> [low|medium|high|xhigh|max] [--rounds N] [focus text]'
 ---
