@@ -1,7 +1,7 @@
 ---
 name: herdr-pair
 description: >-
-  Launch a peer coding agent (Claude, Codex, etc., on any named model) inside a new Herdr terminal pane or split, then run a multi-turn conversation with it through shared markdown files. Use this skill only when the user explicitly asks for a pane or split to host the new agent, e.g. "in a new pane", "in a split", "next to this pane", "herdr pane". Typical uses: a helper that reviews, challenges, digs through logs or implements alongside you. The literal word "pane" or "split" (or Herdr by name) is required. Phrases like "pair with another agent", "open another claude next to/beside you", "start a planner agent", "split the work", "two of you", "coordinate through files" or "iterate til it's good" don't qualify without it. Those go to normal subagent delegation, not this skill. Also don't use it to message or prompt an agent that already exists, run shell commands in a pane, switch your own model, or route a task to a cheaper model. Requires HERDR_ENV=1.
+  Launch a peer coding agent (Codex by default; Claude, Gemini, etc. on request, on any named model) inside a new Herdr terminal pane or split, then run a multi-turn conversation with it through shared markdown files. Use this skill only when the user explicitly asks for a pane or split to host the new agent, e.g. "in a new pane", "in a split", "next to this pane", "herdr pane". Typical uses: a helper that reviews, challenges, digs through logs or implements alongside you. The literal word "pane" or "split" (or Herdr by name) is required. Phrases like "pair with another agent", "open another claude next to/beside you", "start a planner agent", "split the work", "two of you", "coordinate through files" or "iterate til it's good" don't qualify without it. Those go to normal subagent delegation, not this skill. Also don't use it to message or prompt an agent that already exists, run shell commands in a pane, switch your own model, or route a task to a cheaper model. Requires HERDR_ENV=1.
 ---
 
 # herdr-pair
@@ -30,16 +30,32 @@ run a command group like `herdr agent` with no subcommand. Don't guess flags.
 - **Task / role for the peer.** Get this from the request, e.g. "review my
   plan" or "implement the tests while I write the handler". Ask only if it's
   genuinely unclear.
-- **Model.** If the user named one (e.g. "sonnet", "haiku", `claude-opus-5-5`),
-  pass it through. If not, omit the flag so the peer gets its CLI's default
-  model.
-- **Agent kind.** The default is `claude`. If the user names a non-Claude model
-  or tool (codex, gemini, …), map it to the matching `--kind` value (see
+- **Agent kind.** The default is `codex`. A second opinion from a different
+  model family is the main reason to pair in a pane, so use Codex unless the
+  user asks for another agent. If they do ("a claude peer", "use gemini",
+  "sonnet", …), map it to the matching `--kind` value (see
   `herdr agent start --help`), then run `<kind> --help` to find that CLI's
-  model flag. Don't assume it's `--model`.
-- **Peer write access.** The peer has to write its reply file, and a peer in
-  default permission mode blocks on every write, which stalls each turn on the
-  user. Ask once with AskUserQuestion. Offer:
+  model and permission flags. Don't assume they match Codex's or Claude's.
+  Naming a Claude model (sonnet, haiku, `claude-opus-5-5`) means `--kind claude`.
+- **Model.** If the user named one, pass it through (`-m <model>` for Codex,
+  `--model <model>` for Claude). If not, omit the flag so the peer gets its
+  CLI's default model.
+- **Peer write access.** The peer has to write its reply file, and a peer that
+  asks before every write stalls each turn on the user. Ask once with
+  AskUserQuestion. Offer the options for the chosen kind.
+
+  **Codex (default kind):**
+  1. *workspace-write + comms dir (Recommended).* Use
+     `-s workspace-write -a on-request --add-dir <comms>`. Its sandbox lets it
+     write in its cwd and the comms dir; Codex decides when to ask before
+     going further (e.g. network, writes elsewhere).
+  2. *approve-for-me + comms dir.* Use `--approve-for-me --add-dir <comms>`.
+     Approval requests go to Codex's automatic review instead of the user, so
+     there are fewer stalls but less oversight.
+  3. *Default permissions.* Only `--add-dir <comms>`. Codex's config decides;
+     you may see `blocked` states.
+
+  **Claude:**
   1. *acceptEdits + comms dir (Recommended).* Use
      `--permission-mode acceptEdits --add-dir <comms>`. The peer auto-accepts
      file edits in its working dirs, which includes its cwd as well as the
@@ -50,6 +66,9 @@ run a command group like `herdr agent` with no subcommand. Don't guess flags.
      with less oversight.
   3. *Default permissions.* The user approves each write in the peer pane. You
      will see `blocked` states.
+
+  Never offer `--dangerously-bypass-approvals-and-sandbox` (Codex) or
+  `--dangerously-skip-permissions` (Claude) unless the user asks for it.
 - **Turn cap.** Default 6 round trips. This is an arbitrary heuristic, so tell
   the user they can change it.
 
@@ -132,12 +151,18 @@ with `herdr agent list`). Base it on the role, e.g. `reviewer`, `impl-peer`, or
 `planner-2`.
 
 ```bash
+# Codex (default)
+herdr agent start <name> --kind codex --pane <pane_id> -- \
+  [-m <model>] [-s workspace-write -a on-request] --add-dir "$COMMS"
+
+# Claude (only if the user asked for it)
 herdr agent start <name> --kind claude --pane <pane_id> -- \
   [--model <model>] [--permission-mode acceptEdits] --add-dir "$COMMS"
 ```
 
-Anything after `--` goes to the agent CLI. Drop `--model` when you're using the
-default model. Drop `--permission-mode` if the user picked default permissions.
+Anything after `--` goes to the agent CLI. Drop the model flag when you're
+using the default model. Drop the permission flags if the user picked default
+permissions.
 If start returns `agent_not_ready` (blocked at startup, e.g. a trust-folder
 dialog), run `herdr agent read <name> --source recent-unwrapped --lines 60`,
 show the user what it says, and ask before you answer it.
